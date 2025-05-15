@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Checkout - FERREMAS</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+</head>
+<body>
+    <h1>Proceso de Pago</h1>
+    <form action="confirmation.html" method="post">
+        <label for="metodo_pago">Selecciona método de pago:</label>
+        <select id="metodo_pago" name="metodo_pago">
+            <option value="debito">Débito</option>
+            <option value="credito">Crédito</option>
+            <option value="transferencia">Transferencia</option>
+        </select><br><br>
+        <button type="submit">Confirmar compra</button>
+    </form>
+</body>
+</html>
