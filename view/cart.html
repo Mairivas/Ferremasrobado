@@ -1,26 +1,27 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Carrito de Compras - FERREMAS</title>
     <link rel="stylesheet" href="../static/css/style.css">
+    <button onclick="history.back()">⬅ Volver</button>
 </head>
+
 <body>
     <h1>Carrito de Compras</h1>
     <table>
         <tr>
             <th>Producto</th>
             <th>Cantidad</th>
-            <th>Precio</th>
+            <th>Subtotal</th>
         </tr>
-        <tr>
-            <td>Taladro Bosch</td>
-            <td>1</td>
-            <td>$45.990</td>
-        </tr>
+        {{productos}}
     </table>
-    <p>Total: $45.990</p>
-    <a href="checkout.html">Continuar con la compra</a>
-</body>
-</html>
+    <p>{{mensaje_carrito}}</p>
+    <p>Total: {{total}}</p>
+    <a href="/checkout">Continuar con la compra</a>
 
+</body>
+
+</html>

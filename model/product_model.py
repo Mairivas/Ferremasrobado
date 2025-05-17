@@ -18,11 +18,11 @@ productos = [
     },
     {
         "codigo": "P003",
-        "nombre": "Juego de Tornillos Sika",
+        "nombre": "Caja de Tornillos Tenz",
         "descripcion": "Paquete con 100 tornillos de alta resistencia.",
         "stock": 50,
         "valor": 15000,
-        "imagen": "tornillos_sika.jpg"
+        "imagen": "tornillos_tenz.jpg"
     }
 ]
 

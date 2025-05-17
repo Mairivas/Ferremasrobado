@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <title>Detalle del Producto - FERREMAS</title>
-    <link rel="stylesheet" href="../static/css/style.css">
+    <title>{{nombre}} - FERREMAS</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <button onclick="history.back()">⬅ Volver</button>
 </head>
+
 <body>
     <div id="producto-detalle">
-        <h1>Taladro Bosch</h1>
-        <img src="../static/img/taladro.jpg" alt="Taladro" style="width:300px;">
-        <p><strong>Descripción:</strong> Taladro eléctrico de alto rendimiento, 650W.</p>
-        <p><strong>Stock disponible:</strong> 15 unidades</p>
-        <p><strong>Precio:</strong> $45.990</p>
-        <a href="cart.html">Agregar al carrito</a>
+        <h1>{{nombre}}</h1>
+        <img src="/static/img/{{imagen}}" alt="{{nombre}}" style="width: 200px;">
+        <p>{{descripcion}}</p>
+        <p>Precio: ${{valor}}</p>
+        <a href="/add_to_cart?codigo={{codigo}}">Agregar al carrito</a>
+
     </div>
 </body>
+
 </html>
