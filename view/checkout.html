@@ -8,14 +8,9 @@
 </head>
 <body>
     <h1>Proceso de Pago</h1>
-    <form action="confirmation.html" method="post">
-        <label for="metodo_pago">Selecciona método de pago:</label>
-        <select id="metodo_pago" name="metodo_pago">
-            <option value="debito">Débito</option>
-            <option value="credito">Crédito</option>
-            <option value="transferencia">Mercado Pago</option>
-        </select><br><br>
-        <button type="submit">Confirmar compra</button>
+    <form method="GET" action="/checkout">
+        <button type="submit">Pagar con Webpay</button>
     </form>
 </body>
 </html>
+

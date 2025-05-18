@@ -4,6 +4,21 @@ import urllib.parse
 import os
 
 from model import product_model
+from urllib.parse import urlparse, parse_qs
+from transbank.webpay.webpay_plus.transaction import Transaction
+from transbank.common.options import WebpayOptions
+from transbank.common.integration_type import IntegrationType
+from transbank.common.integration_commerce_codes import IntegrationCommerceCodes
+from transbank.common.integration_api_keys import IntegrationApiKeys
+import uuid
+
+webpay_options = WebpayOptions(
+    commerce_code=IntegrationCommerceCodes.WEBPAY_PLUS,
+    api_key=IntegrationApiKeys.WEBPAY,
+    integration_type=IntegrationType.TEST
+)
+
+
 
 PORT = 8000
 
@@ -191,7 +206,56 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         elif self.path == "/checkout":
-            self.path = "view/checkout.html"
+            # Calcular el total del carrito
+            total = 0
+            for item in carrito:
+                producto = product_model.obtener_producto_por_codigo(item["codigo"])
+                if producto:
+                    subtotal = producto["valor"] * item["cantidad"]
+                    total += subtotal
+
+            # Crear una orden de compra única
+            buy_order = uuid.uuid4().hex[:26]
+            session_id = str(uuid.uuid4())
+            return_url = "http://localhost:8000/confirmacion_pago"
+
+            # Crear la transacción
+            tx = Transaction(webpay_options)
+            response = tx.create(buy_order, session_id, total, return_url)
+
+            # Redirigir al usuario al formulario de pago de Webpay
+            self.send_response(302)
+            self.send_header("Location", response['url'] + "?token_ws=" + response['token'])
+            self.end_headers()
+            return
+        
+        elif self.path.startswith("/confirmacion_pago"):
+                parsed_url = urllib.parse.urlparse(self.path)
+                query = urllib.parse.parse_qs(parsed_url.query)
+
+                tbk_token = query.get('TBK_TOKEN', [None])[0]
+                tbk_orden_compra = query.get('TBK_ORDEN_COMPRA', [None])[0]
+                tbk_id_sesion = query.get('TBK_ID_SESION', [None])[0]
+
+                # Aquí puedes procesar el resultado, por ejemplo, validar el pago con la API de Webpay
+
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+
+                if tbk_token is None:
+                    mensaje = "<h1>Pago cancelado o sin token</h1>"
+                else:
+                    mensaje = f"<h1>Pago procesado</h1><p>Orden: {tbk_orden_compra}</p>"
+
+                self.wfile.write(f"""
+                    <html><body>
+                    {mensaje}
+                    <p><a href='/catalog'>Volver al catalogo</a></p>
+                    </body></html>
+                """.encode("utf-8"))
+                return
+
 
         elif self.path.startswith("/static/"):
             return http.server.SimpleHTTPRequestHandler.do_GET(self)
@@ -245,6 +309,30 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_response(302)
                 self.send_header("Location", "/login?registered=1")
                 self.end_headers()
+
+        elif self.path == "/confirmacion_pago":
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            fields = urllib.parse.parse_qs(post_data.decode('utf-8'))
+            token = fields.get('token_ws', [''])[0]
+
+            # Confirmar la transacción
+            tx = Transaction(webpay_options)
+            result = tx.commit(token)
+
+            # Verificar el resultado de la transacción
+            if result['status'] == 'AUTHORIZED':
+                carrito.clear()  # Vaciar el carrito
+                mensaje = "Pago realizado con éxito. Gracias por su compra."
+            else:
+                mensaje = "El pago no fue autorizado. Intente nuevamente."
+
+            # Mostrar la confirmación
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(f"<html><body><h1>{mensaje}</h1></body></html>".encode("utf-8"))
+            return
 
         else:
             self.send_error(501, "Unsupported method (POST)")
