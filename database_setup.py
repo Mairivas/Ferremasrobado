@@ -30,9 +30,9 @@ CREATE TABLE IF NOT EXISTS productos (
 cursor.execute("INSERT OR IGNORE INTO usuarios (name, email, password) VALUES (?, ?, ?)", ("Juan", "cliente1@gmail.com", "Cliente.01"))
 
 productos = [
-    ("P001", "Taladro Bosch", "Taladro percutor Bosch 500W.", 10, 49990, "/static/img/taladro_bosch.jpg"),
-    ("P002", "Martillo Stanley", "Martillo de carpintero 16oz Stanley.", 25, 8990, "/static/img/martillo_stanley.jpg"),
-    ("P003", "Caja de Tornillos Tenz", "Paquete con 100 tornillos de alta resistencia.", 50, 150000, "/static/img/tornillos_tenz.jpg")
+    ("P001", "Taladro Bosch", "Taladro percutor Bosch 500W.", 10, 49990, "taladro_bosch.jpg"),
+    ("P002", "Martillo Stanley", "Martillo de carpintero 16oz Stanley.", 25, 8990, "martillo_stanley.jpg"),
+    ("P003", "Caja de Tornillos Tenz", "Paquete con 100 tornillos de alta resistencia.", 50, 150000, "tornillos_tenz.jpg")
 ]
 
 cursor.executemany("INSERT OR IGNORE INTO productos VALUES (?, ?, ?, ?, ?, ?)", productos)

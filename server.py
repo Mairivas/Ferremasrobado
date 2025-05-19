@@ -83,9 +83,10 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
 
             productos_html = ""
             for producto in product_model.listar_productos():
+                ruta_imagen = f"/static/img/{producto['imagen']}"  # 🔧 Construir ruta completa
                 productos_html += f"""
                 <div class="producto">
-                    <img src="{producto['imagen']}" alt="{producto['nombre']}" style="width: 200px; height: auto;">
+                    <img src="{ruta_imagen}" alt="{producto['nombre']}" style="width: 200px; height: auto;">
                     <h3>{producto['nombre']}</h3>
                     <p>${producto['valor']}</p>
                     <a href="/product_detail?codigo={producto['codigo']}">Ver más</a>
@@ -100,7 +101,8 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(html.encode("utf-8"))
             return
 
-        elif self.path.startswith("/product_detail"):
+
+        elif self.path.startswith("/product_detail"): 
             query = urllib.parse.urlparse(self.path).query
             params = urllib.parse.parse_qs(query)
             codigo = params.get("codigo", [""])[0]
@@ -111,6 +113,10 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 with open("view/product_detail.html", "r", encoding="utf-8") as file:
                     html = file.read()
 
+                # 🔧 Asegurarse de que la ruta de imagen sea completa
+                producto["imagen"] = f"/static/img/{producto['imagen']}"
+
+                # Reemplazar todas las variables en el HTML
                 for key, value in producto.items():
                     html = html.replace(f"{{{{{key}}}}}", str(value))
 
@@ -121,6 +127,8 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             else:
                 self.send_error(404, "Producto no encontrado")
             return
+
+
 
         elif self.path.startswith("/add_to_cart"):
             query = urllib.parse.urlparse(self.path).query
@@ -241,9 +249,9 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
 
                 if tbk_token is None:
-                    mensaje = "<h1>Pago cancelado o sin token</h1>"
+                    mensaje = "<h1>Pago aprovado</h1>"
                 else:
-                    mensaje = f"<h1>Pago procesado</h1><p>Orden: {tbk_orden_compra}</p>"
+                    mensaje = f"<h1>Pago cancelado</h1><p>Orden: {tbk_orden_compra}</p>"
 
                 self.wfile.write(f"""
                     <html><body>

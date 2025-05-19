@@ -11,11 +11,11 @@
 <body>
     <div id="producto-detalle">
         <h1>{{nombre}}</h1>
-        <img src="/static/img/{{imagen}}" alt="{{nombre}}" style="width: 200px;">
+        <!-- 🔧 Ruta de imagen ya viene completa -->
+        <img src="{{imagen}}" alt="{{nombre}}" style="width: 200px;">
         <p>{{descripcion}}</p>
         <p>Precio: ${{valor}}</p>
         <a href="/add_to_cart?codigo={{codigo}}">Agregar al carrito</a>
-
     </div>
 </body>
 
