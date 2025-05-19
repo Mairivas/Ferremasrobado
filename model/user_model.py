@@ -1,11 +1,11 @@
- # Simulación de base de datos de usuarios
-usuarios = [
-    {"email": "cliente1@gmail.com", "password": "Cliente.01"}
-]
+import sqlite3
 
 def verificar_usuario(name, email, password):
-    for user in usuarios:
-        if user["name"] == name and user["email"] == email and user["password"] == password:
-            return True
-    return False
+    conn = sqlite3.connect("ferremas.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM usuarios WHERE name = ? email = ? AND password = ?", (name, email, password))
+    usuario = cursor.fetchone()
+    conn.close()
+    return usuario is not None
+
 

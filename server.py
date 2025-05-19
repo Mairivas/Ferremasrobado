@@ -4,7 +4,6 @@ import urllib.parse
 import os
 
 from model import product_model
-from urllib.parse import urlparse, parse_qs
 from transbank.webpay.webpay_plus.transaction import Transaction
 from transbank.common.options import WebpayOptions
 from transbank.common.integration_type import IntegrationType
@@ -17,8 +16,6 @@ webpay_options = WebpayOptions(
     api_key=IntegrationApiKeys.WEBPAY,
     integration_type=IntegrationType.TEST
 )
-
-
 
 PORT = 8000
 
@@ -88,7 +85,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             for producto in product_model.listar_productos():
                 productos_html += f"""
                 <div class="producto">
-                    <img src="/static/img/{producto['imagen']}" alt="{producto['nombre']}" style="width: 200px; height: auto;">
+                    <img src="{producto['imagen']}" alt="{producto['nombre']}" style="width: 200px; height: auto;">
                     <h3>{producto['nombre']}</h3>
                     <p>${producto['valor']}</p>
                     <a href="/product_detail?codigo={producto['codigo']}">Ver más</a>
