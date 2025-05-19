@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Agregar Producto - FERREMAS</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <h1>Agregar Nuevo Producto</h1>
+
+    <form action="/agregar_producto" method="post">
+        <label for="codigo">Código:</label>
+        <input type="text" name="codigo" required><br>
+
+        <label for="nombre">Nombre:</label>
+        <input type="text" name="nombre" required><br>
+
+        <label for="valor">Valor:</label>
+        <input type="number" name="valor" required><br>
+
+        <label for="descripcion">Descripción:</label>
+        <textarea name="descripcion" required></textarea><br>
+
+        <label for="imagen">imagen por nombre:</label>
+        <input type="text" name="imagen" required><br>
+
+        <label for="stock">Stock:</label>
+        <input type="number" name="stock" required><br>
+
+        <button type="submit">Agregar Producto</button>
+    </form>
+
+    {{mensaje}}
+</body>
+
+</html>

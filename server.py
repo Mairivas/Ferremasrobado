@@ -252,6 +252,20 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                     </body></html>
                 """.encode("utf-8"))
                 return
+        
+        elif self.path == "/agregar_producto":
+            with open("view/agregar_producto.html", "r", encoding="utf-8") as file:
+                html = file.read()
+
+            mensaje = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("mensaje", [""])[0]
+            html = html.replace("{{mensaje}}", f"<p style='color:green;'>{mensaje}</p>" if mensaje else "")
+
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(html.encode("utf-8"))
+            return
+
 
 
         elif self.path.startswith("/static/"):
@@ -355,6 +369,47 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(f"<html><body><h1>{mensaje}</h1></body></html>".encode("utf-8"))
             return
+        
+        elif self.path == "/agregar_producto": 
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            fields = urllib.parse.parse_qs(post_data.decode('utf-8'))
+
+            codigo = fields.get('codigo', [''])[0]
+            nombre = fields.get('nombre', [''])[0]
+            valor = int(fields.get('valor', ['0'])[0])
+            descripcion = fields.get('descripcion', [''])[0]
+            imagen = fields.get('imagen', [''])[0]
+            stock = int(fields.get('stock', ['0'])[0])  # 👈 Agregado
+
+            try:
+                conn = sqlite3.connect("ferremas.db")
+                cursor = conn.cursor()
+
+                # Verificar si ya existe producto con mismo código
+                cursor.execute("SELECT * FROM productos WHERE codigo = ?", (codigo,))
+                if cursor.fetchone():
+                    self.send_response(302)
+                    self.send_header("Location", "/agregar_producto?mensaje=Ya+existe+un+producto+con+ese+codigo.")
+                    self.end_headers()
+                else:
+                    cursor.execute(
+                        "INSERT INTO productos (codigo, nombre, descripcion, stock, valor, imagen) VALUES (?, ?, ?, ?, ?, ?)",
+                        (codigo, nombre, descripcion, stock, valor, imagen)
+                    )
+                    conn.commit()
+
+                self.send_response(302)
+                self.send_header("Location", "/catalog")
+                self.end_headers()
+
+
+            except Exception as e:
+                print("Error al agregar producto:", e)
+                self.send_error(500, "Error interno del servidor")
+            finally:
+                conn.close()
+
 
         else:
             self.send_error(501, "Unsupported method (POST)")
