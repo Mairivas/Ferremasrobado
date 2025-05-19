@@ -2,6 +2,7 @@ import http.server
 import socketserver
 import urllib.parse
 import os
+import sqlite3
 
 from model import product_model
 from transbank.webpay.webpay_plus.transaction import Transaction
@@ -19,14 +20,6 @@ webpay_options = WebpayOptions(
 
 PORT = 8000
 
-# Lista de usuarios registrados
-USUARIOS_REGISTRADOS = [
-    {
-        "name": "Juan",
-        "email": "cliente1@gmail.com",
-        "password": "Cliente.01"
-    }
-]
 
 # Carrito de prueba
 carrito = []
@@ -63,7 +56,6 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             with open("view/register.html", "r", encoding="utf-8") as file:
                 html = file.read()
 
-            # Mostrar mensaje de error si hay ?error=1
             query = urllib.parse.urlparse(self.path).query
             params = urllib.parse.parse_qs(query)
             error_html = ""
@@ -83,7 +75,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
 
             productos_html = ""
             for producto in product_model.listar_productos():
-                ruta_imagen = f"/static/img/{producto['imagen']}"  # 🔧 Construir ruta completa
+                ruta_imagen = f"/static/img/{producto['imagen']}" 
                 productos_html += f"""
                 <div class="producto">
                     <img src="{ruta_imagen}" alt="{producto['nombre']}" style="width: 200px; height: auto;">
@@ -113,10 +105,10 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 with open("view/product_detail.html", "r", encoding="utf-8") as file:
                     html = file.read()
 
-                # 🔧 Asegurarse de que la ruta de imagen sea completa
+           
                 producto["imagen"] = f"/static/img/{producto['imagen']}"
 
-                # Reemplazar todas las variables en el HTML
+           
                 for key, value in producto.items():
                     html = html.replace(f"{{{{{key}}}}}", str(value))
 
@@ -242,7 +234,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 tbk_orden_compra = query.get('TBK_ORDEN_COMPRA', [None])[0]
                 tbk_id_sesion = query.get('TBK_ID_SESION', [None])[0]
 
-                # Aquí puedes procesar el resultado, por ejemplo, validar el pago con la API de Webpay
+                # Aquí se puede procesar el resultado
 
                 self.send_response(200)
                 self.send_header("Content-type", "text/html")
@@ -280,18 +272,29 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             email = fields.get('email', [''])[0]
             password = fields.get('password', [''])[0]
 
-            usuario_valido = next((u for u in USUARIOS_REGISTRADOS if u["email"] == email and u["password"] == password), None)
+            try:
+                conn = sqlite3.connect("ferremas.db")
+                cursor = conn.cursor()
 
-            if usuario_valido:
-                self.send_response(302)
-                self.send_header("Location", "/catalog")
-                self.end_headers()
-            else:
-                self.send_response(302)
-                self.send_header("Location", "/login?error=1")
-                self.end_headers()
+                cursor.execute("SELECT * FROM usuarios WHERE email = ? AND password = ?", (email, password))
+                usuario_valido = cursor.fetchone()
 
-        elif self.path == "/register":
+                if usuario_valido:
+                    self.send_response(302)
+                    self.send_header("Location", "/catalog")
+                    self.end_headers()
+                else:
+                    self.send_response(302)
+                    self.send_header("Location", "/login?error=1")
+                    self.end_headers()
+            except Exception as e:
+                print("Error en login:", e)
+                self.send_error(500, "Error interno del servidor")
+            finally:
+                conn.close()
+
+
+        elif self.path.startswith("/register"):
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
             fields = urllib.parse.parse_qs(post_data.decode('utf-8'))
@@ -300,20 +303,34 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             email = fields.get('email', [''])[0]
             password = fields.get('password', [''])[0]
 
-            if any(u["email"] == email for u in USUARIOS_REGISTRADOS):
-                self.send_response(302)
-                self.send_header("Location", "/register?error=1")
-                self.end_headers()
-            else:
-                USUARIOS_REGISTRADOS.append({
-                    "name": nombre,
-                    "email": email,
-                    "password": password
-                })
+            try:
+                conn = sqlite3.connect("ferremas.db")
+                cursor = conn.cursor()
 
-                self.send_response(302)
-                self.send_header("Location", "/login?registered=1")
-                self.end_headers()
+                # Verificar si ya existe email
+                cursor.execute("SELECT * FROM usuarios WHERE email = ?", (email,))
+                existente = cursor.fetchone()
+
+                if existente:
+                    # Si existe, redirigir con error
+                    self.send_response(302)
+                    self.send_header("Location", "/register?error=1")
+                    self.end_headers()
+                else:
+                    # Insertar nuevo usuario
+                    cursor.execute("INSERT INTO usuarios (name, email, password) VALUES (?, ?, ?)",
+                                (nombre, email, password))
+                    conn.commit()
+
+                    # Redirigir a login con mensaje de éxito
+                    self.send_response(302)
+                    self.send_header("Location", "/login?registered=1")
+                    self.end_headers()
+            except Exception as e:
+                print("Error al registrar usuario:", e)
+                self.send_error(500, "Error interno del servidor")
+            finally:
+                conn.close()
 
         elif self.path == "/confirmacion_pago":
             content_length = int(self.headers['Content-Length'])
@@ -341,6 +358,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
 
         else:
             self.send_error(501, "Unsupported method (POST)")
+
 
 # Cambiar el directorio raíz para servir archivos desde el proyecto
 os.chdir(os.path.dirname(os.path.abspath(__file__)))

@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS productos (
 )
 """)
 
-# Insertar datos de ejemplo
+# datos de ejemplo
 cursor.execute("INSERT OR IGNORE INTO usuarios (name, email, password) VALUES (?, ?, ?)", ("Juan", "cliente1@gmail.com", "Cliente.01"))
 
 productos = [
