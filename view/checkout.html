@@ -3,14 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <title>Checkout - FERREMAS</title>
-    <link rel="stylesheet" href="../static/css/style.css">
-    <button onclick="history.back()">⬅ Volver</button>
+    <style>
+        body {
+            background: #f3f3f3;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #222;
+        }
+        nav {
+            background: #222;
+            color: #fff;
+            padding: 16px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 18px;
+            font-weight: 500;
+            font-size: 1.1em;
+        }
+        nav a:hover {
+            color: #ff7300;
+        }
+        nav img {
+            margin-left: 24px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 32px auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+            padding: 32px 24px;
+        }
+        h1 {
+            margin-bottom: 18px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        label {
+            font-weight: 500;
+        }
+        input, select {
+            padding: 10px;
+            border: 1px solid #bbb;
+            border-radius: 5px;
+            font-size: 1em;
+            background: #f9f9f9;
+        }
+        button, .btn {
+            background: #ff7300;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        button:hover, .btn:hover {
+            background: #ff9800;
+        }
+        .cart-total {
+            text-align: right;
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-top: 18px;
+            color: #ff7300;
+        }
+    </style>
 </head>
 <body>
-    <h1>Proceso de Pago</h1>
-    <form method="GET" action="/checkout">
-        <button type="submit">Pagar con Webpay</button>
-    </form>
+    <nav>
+        <a href="/catalog"><img src="/static/img/ferremas.png" alt="FERREMAS" width="60"></a>
+        <a href="/catalog">Catálogo</a>
+        <a href="/cart">Carrito</a>
+        <a href="/logout">Cerrar Sesión</a>
+    </nav>
+    <div class="container">
+        <button onclick="history.back()" class="btn">⬅ Volver</button>
+        <h1>Finalizar Compra</h1>
+        <div class="cart-total">
+            Total a pagar: {{total}}
+        </div>
+        {{mensaje}}
+        <form method="POST" action="/checkout">
+            <label for="direccion">Dirección de envío:</label>
+            <input type="text" id="direccion" name="direccion" required>
+            <label for="metodo_pago">Método de pago:</label>
+            <select id="metodo_pago" name="metodo_pago" required>
+                <option value="tarjeta">Tarjeta de crédito/débito</option>
+                <option value="transferencia">Transferencia bancaria</option>
+                <option value="efectivo">Pago en efectivo</option>
+            </select>
+            <button type="submit" class="btn">Confirmar Compra</button>
+        </form>
+    </div>
 </body>
 </html>
-

@@ -1,22 +1,101 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
-    <title>{{nombre}} - FERREMAS</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <button onclick="history.back()">⬅ Volver</button>
+    <title>Detalle de Producto - FERREMAS</title>
+    <style>
+        body {
+            background: #f3f3f3;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #222;
+        }
+        nav {
+            background: #222;
+            color: #fff;
+            padding: 16px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 18px;
+            font-weight: 500;
+            font-size: 1.1em;
+        }
+        nav a:hover {
+            color: #ff7300;
+        }
+        nav img {
+            margin-left: 24px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 32px auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+            padding: 32px 24px;
+        }
+        .product-card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 18px;
+            margin: 18px 0;
+            text-align: center;
+        }
+        .product-card img {
+            width: 100%;
+            max-width: 180px;
+            height: auto;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            background: #f3f3f3;
+        }
+        .product-card h3 {
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            color: #222;
+        }
+        .product-card p {
+            margin-bottom: 8px;
+            color: #444;
+        }
+        .btn {
+            background: #ff7300;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .btn:hover {
+            background: #ff9800;
+        }
+    </style>
 </head>
-
 <body>
-    <div id="producto-detalle">
+    <nav>
+        <a href="/catalog"><img src="/static/img/ferremas.png" alt="FERREMAS" width="60"></a>
+        <a href="/catalog">Catálogo</a>
+        <a href="/cart">Carrito</a>
+        <a href="/logout">Cerrar Sesión</a>
+    </nav>
+    <div class="container">
+        <button onclick="history.back()" class="btn">⬅ Volver</button>
         <h1>{{nombre}}</h1>
-        <img src="{{imagen}}" alt="{{nombre}}" style="width: 200px;">
-        <p>{{descripcion}}</p>
-        <p>Precio: ${{valor}}</p>
-        <p>Stock: {{stock}}</p>
-        <a href="/add_to_cart?codigo={{codigo}}">Agregar al carrito</a>
+        <div class="product-card">
+            <img src="{{imagen}}" alt="{{nombre}}">
+            <p><strong>Precio:</strong> ${{valor}}</p>
+            <p><strong>Descripción:</strong> {{descripcion}}</p>
+            <p><strong>Stock:</strong> {{stock}}</p>
+            <a href="/add_to_cart?codigo={{codigo}}" class="btn">Agregar al Carrito</a>
+        </div>
     </div>
 </body>
-
 </html>

@@ -1,27 +1,115 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <title>Carrito de Compras - FERREMAS</title>
-    <link rel="stylesheet" href="../static/css/style.css">
-    <button onclick="history.back()">⬅ Volver</button>
+    <style>
+        body {
+            background: #f3f3f3;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #222;
+        }
+        nav {
+            background: #222;
+            color: #fff;
+            padding: 16px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 18px;
+            font-weight: 500;
+            font-size: 1.1em;
+        }
+        nav a:hover {
+            color: #ff7300;
+        }
+        nav img {
+            margin-left: 24px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 32px auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+            padding: 32px 24px;
+        }
+        button, .btn {
+            background: #ff7300;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        button:hover, .btn:hover {
+            background: #ff9800;
+        }
+        .cart-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .cart-table th, .cart-table td {
+            padding: 14px 10px;
+            text-align: left;
+        }
+        .cart-table th {
+            background: #ff7300;
+            color: #fff;
+            font-weight: 600;
+        }
+        .cart-table tr:nth-child(even) {
+            background: #f6f6f6;
+        }
+        .cart-total {
+            text-align: right;
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-top: 18px;
+            color: #ff7300;
+        }
+    </style>
 </head>
-
 <body>
-    <h1>Carrito de Compras</h1>
-    <table>
-        <tr>
-            <th>Producto</th>
-            <th>Cantidad</th>
-            <th>Subtotal</th>
-        </tr>
-        {{productos}}
-    </table>
-    <p>{{mensaje_carrito}}</p>
-    <p>Total: {{total}}</p>
-    <a href="/checkout">Continuar con la compra</a>
-
+    <nav>
+        <a href="/catalog"><img src="/static/img/ferremas.png" alt="FERREMAS" width="60"></a>
+        <a href="/catalog">Catálogo</a>
+        <a href="/logout">Cerrar Sesión</a>
+    </nav>
+    <div class="container">
+        <button onclick="history.back()" class="btn">⬅ Volver</button>
+        <h1>Carrito de Compras</h1>
+        <table class="cart-table">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Subtotal</th>
+                    <th>Eliminar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{productos}}
+            </tbody>
+        </table>
+        <div class="cart-total">
+            Total: {{total}}
+        </div>
+        <div>
+            {{mensaje_carrito}}
+        </div>
+        <a href="/checkout"><button class="btn">Proceder al Pago</button></a>
+    </div>
 </body>
-
 </html>

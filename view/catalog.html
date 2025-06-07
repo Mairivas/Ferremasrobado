@@ -1,26 +1,111 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <title>Catálogo - FERREMAS</title>
-
-    <link rel="stylesheet" href="/static/css/style.css">
-    <button onclick="history.back()">⬅ Volver</button>
-        <div id="catalogo">
-        <a href="/agregar_producto">
-            <button>➕ Agregar Nuevo Producto</button>
-        </a>
-    </div>
+    <style>
+        body {
+            background: #f3f3f3;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #222;
+        }
+        nav {
+            background: #222;
+            color: #fff;
+            padding: 16px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 18px;
+            font-weight: 500;
+            font-size: 1.1em;
+        }
+        nav a:hover {
+            color: #ff7300;
+        }
+        nav img {
+            margin-left: 24px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 32px auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+            padding: 32px 24px;
+        }
+        button, .btn {
+            background: #ff7300;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        button:hover, .btn:hover {
+            background: #ff9800;
+        }
+        #catalogo .producto {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 18px;
+            margin: 18px 0;
+            display: inline-block;
+            width: 240px;
+            vertical-align: top;
+            text-align: center;
+        }
+        #catalogo .producto img {
+            width: 100%;
+            max-width: 180px;
+            height: auto;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            background: #f3f3f3;
+        }
+        #catalogo .producto h3 {
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            color: #222;
+        }
+        #catalogo .producto p {
+            margin-bottom: 8px;
+            color: #444;
+        }
+        #catalogo .producto a {
+            display: inline-block;
+            margin-top: 8px;
+            color: #ff7300;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        #catalogo .producto a:hover {
+            color: #ff9800;
+            text-decoration: underline;
+        }
+    </style>
 </head>
-
 <body>
-    <h1>Catálogo de Productos</h1>
-
-    <div id="catalogo">
-        <!-- Aquí se insertarán los productos -->
-        {{productos}}
+    <nav>
+        <a href="/catalog"><img src="/static/img/ferremas.png" alt="FERREMAS" width="60"></a>
+        <a href="/cart">Carrito</a>
+        <a href="/agregar_producto">Agregar Producto</a>
+        <a href="/logout">Cerrar Sesión</a>
+    </nav>
+    <div class="container">
+        <button onclick="history.back()" class="btn">⬅ Volver</button>
+        <h1>Catálogo de Productos</h1>
+        <div id="catalogo">
+            {{productos}}
+        </div>
     </div>
 </body>
-
 </html>
