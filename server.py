@@ -11,7 +11,7 @@ from transbank.common.integration_type import IntegrationType
 from transbank.common.integration_commerce_codes import IntegrationCommerceCodes
 from transbank.common.integration_api_keys import IntegrationApiKeys
 import uuid
-
+import requests
 webpay_options = WebpayOptions(
     commerce_code=IntegrationCommerceCodes.WEBPAY_PLUS,
     api_key=IntegrationApiKeys.WEBPAY,
@@ -72,20 +72,95 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
         elif self.path == "/catalog":
             with open("view/catalog.html", "r", encoding="utf-8") as file:
                 html = file.read()
-
             productos_html = ""
-            for producto in product_model.listar_productos():
-                ruta_imagen = f"/static/img/{producto['imagen']}" 
+            # Botón para administrar productos
+            admin_button = """
+            <div style="text-align: center; margin: 20px 0;">
+                <a href="/admin_productos" style="background: #ffc107; color: #212529; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    🛠️ Administrar Productos (API)
+                </a>
+            </div>
+            """                
+            conn = sqlite3.connect('ferremas.db')
+            cursor = conn.cursor()
+            cursor.execute("SELECT codigo, nombre, valor, stock, imagen, descripcion FROM productos")
+            productos = cursor.fetchall()
+            conn.close()
+            
+            # Generar HTML para cada producto
+            for producto in productos:
+                codigo, nombre, valor, stock, imagen, descripcion = producto
+                
+                # Obtener precio en USD
+                try:
+                    response = requests.get("http://localhost:5001/api/divisas/USD")
+                    if response.status_code == 200:
+                        data = response.json()
+                        valor_usd = round(valor / data['valor'], 2)
+                        precio_usd = f"${valor_usd} USD"
+                    else:
+                        precio_usd = "No disponible"
+                except:
+                    precio_usd = "No disponible"
+                
                 productos_html += f"""
-                <div class="producto">
-                    <img src="{ruta_imagen}" alt="{producto['nombre']}" style="width: 200px; height: auto;">
-                    <h3>{producto['nombre']}</h3>
-                    <p>${producto['valor']}</p>
-                    <a href="/product_detail?codigo={producto['codigo']}">Ver más</a>
+                <div class="product-card">
+                    <img src="static/images/{imagen}" alt="{nombre}">
+                    <h3>{nombre}</h3>
+                    <p class="price">
+                        ${valor:,} CLP<br>
+                        <span style="color: #28a745; font-size: 0.9em;">{precio_usd}</span>
+                    </p>
+                    <p class="stock">Stock: {stock} unidades</p>
+                    <p class="description">{descripcion}</p>
+                    <button onclick="addToCart('{codigo}', '{nombre}', {valor})">Agregar al Carrito</button>
+                    <button onclick="consultarStockAPI('{codigo}')" style="background: #28a745; margin-top: 5px;">
+                        Consultar Stock API
+                    </button>
                 </div>
                 """
+            
+                html = html.replace("{{productos}}", admin_button + productos_html)
+            
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(html.encode("utf-8"))
+                return
+   
+            
+            # Obtener tipo de cambio
+            try:
+                import requests
+                response = requests.get("http://localhost:5001/api/divisas/usd-clp", timeout=2)
+                if response.status_code == 200:
+                    tipo_cambio_data = response.json()
+                    tipo_cambio = tipo_cambio_data['tipo_cambio']
+                else:
+                    tipo_cambio = 950.0  # Valor por defecto
+            except:
+                tipo_cambio = 950.0  # Valor por defecto si falla la API
+            
+            for producto in product_model.listar_productos():
+                ruta_imagen = f"/static/img/{producto['imagen']}"
+                precio_usd = round(producto['valor'] / tipo_cambio, 2)
+                
+            productos_html += f"""
+<div style="border: 1px solid #ddd; padding: 15px; margin: 10px; border-radius: 8px;">
+    <img src="{ruta_imagen}" alt="{producto['nombre']}" style="width: 200px; height: 150px; object-fit: cover;">
+    <h3>{producto['nombre']}</h3>
+    <p><strong>Código:</strong> {producto['codigo']}</p>
+    <p><strong>Precio CLP:</strong> ${producto['valor']:,}</p>
+    <p><strong>Precio USD:</strong> ${precio_usd}</p>
+    <p><strong>Stock:</strong> {producto['stock']} unidades</p>
+    <div style="margin-top: 10px;">
+        <a href="/product_detail?codigo={producto['codigo']}" style="background: #007bff; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; margin-right: 10px;">Ver más</a>
+        <a href="/consultar_stock_api?codigo={producto['codigo']}" style="background: #28a745; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">📊 Consultar Stock API</a>
+    </div>
+</div>
+"""
 
-            html = html.replace("{{productos}}", productos_html)
+            html = html.replace("{{productos}}", admin_button + productos_html)
 
             self.send_response(200)
             self.send_header("Content-type", "text/html")
@@ -201,6 +276,185 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(html.encode("utf-8"))
             return
+        
+        elif self.path.startswith("/consultar_stock_api"):
+            query = urllib.parse.urlparse(self.path).query
+            params = urllib.parse.parse_qs(query)
+            codigo = params.get("codigo", [""])[0]
+            
+            if codigo:
+                try:
+                    # Consultar nuestra propia API de productos
+                    import requests
+                    response = requests.get(f"http://localhost:5000/api/productos/{codigo}/stock", timeout=2)
+                    
+                    if response.status_code == 200:
+                        stock_data = response.json()
+                        mensaje = f"""
+                        <div style="max-width: 600px; margin: 50px auto; padding: 20px; border: 2px solid #28a745; border-radius: 10px; background: #f8f9fa;">
+                            <h2 style="color: #28a745;">📊 Consulta de Stock via API</h2>
+                            <p><strong>Código:</strong> {stock_data['codigo']}</p>
+                            <p><strong>Stock disponible:</strong> {stock_data['stock']} unidades</p>
+                            <p><strong>Fuente:</strong> API REST Ferremas</p>
+                            <p><strong>Endpoint:</strong> GET /api/productos/{codigo}/stock</p>
+                            <hr>
+                            <p style="font-size: 12px; color: #666;">Esta información fue obtenida mediante nuestra API REST, 
+                            que puede ser consumida por otras tiendas o sucursales para consultar stock en tiempo real.</p>
+                            <a href="/catalog" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">← Volver al Catálogo</a>
+                        </div>
+                        """
+                    else:
+                        mensaje = f"""
+                        <div style="max-width: 600px; margin: 50px auto; padding: 20px; border: 2px solid #dc3545; border-radius: 10px;">
+                            <h2 style="color: #dc3545;">❌ Error en API</h2>
+                            <p>No se pudo consultar el stock del producto {codigo}</p>
+                            <a href="/catalog" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">← Volver al Catálogo</a>
+                        </div>
+                        """
+                except Exception as e:
+                    mensaje = f"""
+                    <div style="max-width: 600px; margin: 50px auto; padding: 20px; border: 2px solid #dc3545; border-radius: 10px;">
+                        <h2 style="color: #dc3545;">❌ Error de Conexión</h2>
+                        <p>No se pudo conectar con la API de productos</p>
+                        <p>Error: {str(e)}</p>
+                        <a href="/catalog" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">← Volver al Catálogo</a>
+                    </div>
+                    """
+            else:
+                mensaje = "<p>Código de producto no válido</p>"
+            
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(f"""
+            <!DOCTYPE html>
+            <html>
+            <head><title>Consulta Stock API - Ferremas</title></head>
+            <body>{mensaje}</body>
+            </html>
+            """.encode("utf-8"))
+            return
+
+        elif self.path == "/admin_productos":
+                # Página de administración de productos
+                html = """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Administración de Productos - Ferremas</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+                        .form-container { background: #f8f9fa; padding: 30px; border-radius: 10px; border: 2px solid #007bff; }
+                        .form-group { margin-bottom: 15px; }
+                        label { display: block; margin-bottom: 5px; font-weight: bold; }
+                        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+                        button { background: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+                        button:hover { background: #218838; }
+                        .back-btn { background: #6c757d; margin-right: 10px; }
+                        .back-btn:hover { background: #545b62; }
+                    </style>
+                </head>
+                <body>
+                    <div class="form-container">
+                        <h2>Administracion de Productos</h2>
+                        <p>Agregar nuevo producto usando API REST</p>
+                        
+                        <form id="productoForm">
+                            <div class="form-group">
+                                <label for="codigo">Codigo del Producto:</label>
+                                <input type="text" id="codigo" name="codigo" required placeholder="Ej: P002">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="nombre">Nombre del Producto:</label>
+                                <input type="text" id="nombre" name="nombre" required placeholder="Ej: Martillo Stanley">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="valor">Precio (CLP):</label>
+                                <input type="number" id="valor" name="valor" required placeholder="Ej: 25990">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="stock">Stock:</label>
+                                <input type="number" id="stock" name="stock" required placeholder="Ej: 20">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="imagen">Nombre de la imagen:</label>
+                                <input type="text" id="imagen" name="imagen" required placeholder="Ej: martillo.jpg">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="descripcion">Descripcion:</label>
+                                <textarea id="descripcion" name="descripcion" rows="3" placeholder="Descripcion del producto..."></textarea>
+                            </div>
+                            
+                            <button type="button" class="back-btn" onclick="window.location.href='/catalog'">← Volver al Catalogo</button>
+                            <button type="submit">Agregar Producto via API</button>
+                        </form>
+                        
+                        <div id="resultado" style="margin-top: 20px;"></div>
+                    </div>
+                    
+                    <script>
+                        document.getElementById('productoForm').addEventListener('submit', async function(e) {
+                            e.preventDefault();
+                            
+                            const formData = {
+                                codigo: document.getElementById('codigo').value,
+                                nombre: document.getElementById('nombre').value,
+                                valor: parseInt(document.getElementById('valor').value),
+                                stock: parseInt(document.getElementById('stock').value),
+                                imagen: document.getElementById('imagen').value,
+                                descripcion: document.getElementById('descripcion').value
+                            };
+                            
+                            try {
+                                const response = await fetch('http://localhost:5000/api/productos', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify(formData)
+                                });
+                                
+                                const result = await response.json();
+                                
+                                if (response.ok) {
+                                    document.getElementById('resultado').innerHTML = `
+                                        <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; border: 1px solid #c3e6cb;">
+                                            <h3>✅ ¡Producto agregado exitosamente!</h3>
+                                            <p><strong>Código:</strong> ${result.codigo}</p>
+                                            <p><strong>Nombre:</strong> ${result.nombre}</p>
+                                            <p><strong>Precio:</strong> $${result.valor}</p>
+                                            <p><strong>Stock:</strong> ${result.stock} unidades</p>
+                                            <a href="/catalog" style="background: #007bff; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Ver en Catálogo</a>
+                                        </div>
+                                    `;
+                                    document.getElementById('productoForm').reset();
+                                } else {
+                                    throw new Error(result.error || 'Error desconocido');
+                                }
+                            } catch (error) {
+                                document.getElementById('resultado').innerHTML = `
+                                    <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; border: 1px solid #f5c6cb;">
+                                        <h3>❌ Error al agregar producto</h3>
+                                        <p>${error.message}</p>
+                                    </div>
+                                `;
+                            }
+                        });
+                    </script>
+                </body>
+                </html>
+                """
+                
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(html.encode("utf-8"))
+                return
 
         elif self.path == "/checkout":
             # Calcular el total del carrito
