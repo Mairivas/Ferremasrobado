@@ -1,0 +1,204 @@
+/* ===== CSS RESPONSIVE PARA PRODUCTOS ===== */
+
+/* Contenedor principal de productos */
+.productos-grid {
+    display: grid;
+    gap: 20px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* RESPONSIVE GRID */
+/* Móvil: 1 columna */
+@media (max-width: 576px) {
+    .productos-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 15px;
+    }
+}
+
+/* Tablet: 2 columnas */
+@media (min-width: 577px) and (max-width: 768px) {
+    .productos-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Desktop: 3 columnas */
+@media (min-width: 769px) {
+    .productos-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Tarjeta de producto */
+.producto-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid #e0e0e0;
+}
+
+.producto-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* Imagen del producto */
+.producto-imagen {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* Contenido de la tarjeta */
+.producto-info {
+    padding: 15px;
+}
+
+.producto-nombre {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.producto-precio {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: #e74c3c;
+    margin-bottom: 8px;
+}
+
+.producto-stock {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.producto-stock.bajo-stock {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+.producto-descripcion {
+    font-size: 0.85em;
+    color: #777;
+    line-height: 1.4;
+    margin-bottom: 15px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Botones */
+.producto-acciones {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-producto {
+    flex: 1;
+    min-width: 80px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-editar {
+    background: #3498db;
+    color: white;
+}
+
+.btn-editar:hover {
+    background: #2980b9;
+}
+
+.btn-eliminar {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-eliminar:hover {
+    background: #c0392b;
+}
+
+/* Badge de stock */
+.stock-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.stock-alto {
+    background: #d4edda;
+    color: #155724;
+}
+
+.stock-medio {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.stock-bajo {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Título de la página */
+.catalogo-titulo {
+    text-align: center;
+    color: #2c3e50;
+    margin: 30px 0;
+    font-size: 2.5em;
+    font-weight: 300;
+}
+
+/* Responsive para título */
+@media (max-width: 576px) {
+    .catalogo-titulo {
+        font-size: 2em;
+        margin: 20px 0;
+    }
+}
+
+/* Loading placeholder */
+.producto-loading {
+    background: #f8f9fa;
+    border-radius: 12px;
+    height: 350px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}
+
+/* Animación de carga */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.loading {
+    animation: pulse 1.5s infinite;
+}

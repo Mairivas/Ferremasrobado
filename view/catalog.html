@@ -2,110 +2,273 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Catálogo - FERREMAS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo - Ferremas</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            background: #f3f3f3;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            color: #222;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
-        nav {
-            background: #222;
-            color: #fff;
-            padding: 16px 0;
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav {
+            max-width: 1200px;
+            margin: 0 auto;
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
         }
-        nav a {
-            color: #fff;
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
             text-decoration: none;
-            margin: 0 18px;
+            color: #333;
             font-weight: 500;
-            font-size: 1.1em;
+            transition: color 0.3s;
         }
-        nav a:hover {
-            color: #ff7300;
+
+        .nav-links a:hover {
+            color: #667eea;
         }
-        nav img {
-            margin-left: 24px;
-        }
+
         .container {
-            max-width: 1100px;
-            margin: 32px auto;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 2px 16px rgba(0,0,0,0.07);
-            padding: 32px 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
         }
-        button, .btn {
-            background: #ff7300;
-            color: #fff;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-size: 1em;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 8px;
-        }
-        button:hover, .btn:hover {
-            background: #ff9800;
-        }
-        #catalogo .producto {
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            padding: 18px;
-            margin: 18px 0;
-            display: inline-block;
-            width: 240px;
-            vertical-align: top;
+
+        .page-title {
             text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
-        #catalogo .producto img {
-            width: 100%;
-            max-width: 180px;
-            height: auto;
-            margin-bottom: 12px;
-            border-radius: 6px;
-            background: #f3f3f3;
+
+        .admin-section {
+            text-align: center;
+            margin-bottom: 3rem;
         }
-        #catalogo .producto h3 {
-            font-size: 1.1em;
-            margin-bottom: 8px;
-            color: #222;
-        }
-        #catalogo .producto p {
-            margin-bottom: 8px;
-            color: #444;
-        }
-        #catalogo .producto a {
-            display: inline-block;
-            margin-top: 8px;
-            color: #ff7300;
-            font-weight: 600;
+
+        .admin-btn {
+            background: linear-gradient(45deg, #ffc107, #ff8f00);
+            color: #212529;
+            padding: 15px 30px;
             text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+            transition: all 0.3s;
+            display: inline-block;
         }
-        #catalogo .producto a:hover {
-            color: #ff9800;
-            text-decoration: underline;
+
+        .admin-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 193, 7, 0.4);
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            overflow: hidden;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .product-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .product-card h3 {
+            color: #333;
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 0.5rem;
+        }
+
+        .stock {
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .description {
+            color: #777;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin: 5px;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        }
+
+        .btn-usd {
+            background: linear-gradient(45deg, #17a2b8, #138496);
+        }
+
+        .btn-stock {
+            background: linear-gradient(45deg, #28a745, #1e7e34);
+        }
+
+        .btn-cart {
+            background: linear-gradient(45deg, #fd7e14, #e55a00);
+        }
+
+        .no-products {
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+            margin-top: 3rem;
+            padding: 2rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
 <body>
-    <nav>
-        <a href="/catalog"><img src="/static/img/ferremas.png" alt="FERREMAS" width="60"></a>
-        <a href="/cart">Carrito</a>
-        <a href="/agregar_producto">Agregar Producto</a>
-        <a href="/logout">Cerrar Sesión</a>
-    </nav>
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">🔨 Ferremas</div>
+            <ul class="nav-links">
+                <li><a href="/">Inicio</a></li>
+                <li><a href="/catalog">Catálogo</a></li>
+                <li><a href="/cart">Carrito</a></li>
+            </ul>
+        </nav>
+    </header>
+
     <div class="container">
-        <button onclick="history.back()" class="btn">⬅ Volver</button>
-        <h1>Catálogo de Productos</h1>
-        <div id="catalogo">
+        <h1 class="page-title">🛠️ Catálogo de Productos</h1>
+
+        <div class="admin-section">
+            <a href="/admin_productos" class="admin-btn">
+                🛠️ Administrar Productos (API)
+            </a>
+        </div>
+
+        <div class="products-grid">
             {{productos}}
         </div>
     </div>
+
+    <script>
+    async function consultarDivisas(codigo, valorCLP) {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '⏳ Consultando...';
+        button.disabled = true;
+
+        try {
+            const response = await fetch('http://localhost:5001/api/divisas/usd-clp', {
+                method: 'GET'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const valorUSD = (valorCLP / data.tipo_cambio).toFixed(2);
+                button.innerHTML = `$${valorUSD} USD`;
+                button.style.background = 'linear-gradient(45deg, #28a745, #1e7e34)';
+            } else {
+                button.innerHTML = 'API no disponible';
+                button.style.background = 'linear-gradient(45deg, #dc3545, #c82333)';
+            }
+        } catch (error) {
+            button.innerHTML = 'Error API';
+            button.style.background = 'linear-gradient(45deg, #dc3545, #c82333)';
+        }
+
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.style.background = 'linear-gradient(45deg, #17a2b8, #138496)';
+            button.disabled = false;
+        }, 3000);
+    }
+
+    function consultarStockAPI(codigo) {
+        window.location.href = `/consultar_stock_api?codigo=${codigo}`;
+    }
+
+    function addToCart(codigo, nombre, valor) {
+        alert(`✅ Producto "${nombre}" agregado al carrito`);
+        // Aquí puedes agregar la lógica del carrito
+    }
+    </script>
 </body>
 </html>

@@ -3,7 +3,6 @@ import socketserver
 import urllib.parse
 import os
 import sqlite3
-import requests
 
 from model import product_model
 from transbank.webpay.webpay_plus.transaction import Transaction
@@ -12,7 +11,7 @@ from transbank.common.integration_type import IntegrationType
 from transbank.common.integration_commerce_codes import IntegrationCommerceCodes
 from transbank.common.integration_api_keys import IntegrationApiKeys
 import uuid
-
+import requests
 webpay_options = WebpayOptions(
     commerce_code=IntegrationCommerceCodes.WEBPAY_PLUS,
     api_key=IntegrationApiKeys.WEBPAY,
@@ -96,17 +95,25 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 for producto in productos:
                     codigo, nombre, valor, stock, imagen, descripcion = producto
 
+                    # Obtener precio en USD
+                    try:
+                        response = requests.get("http://localhost:5001/api/divisas/USD", timeout=2)
+                        if response.status_code == 200:
+                            data = response.json()
+                            valor_usd = round(valor / data['valor'], 2)
+                            precio_usd = f"${valor_usd} USD"
+                        else:
+                            precio_usd = "No disponible"
+                    except:
+                        precio_usd = "No disponible"
+
                     productos_html += f"""
                     <div class="product-card">
-                        <img src="static/img/{imagen}" alt="{nombre}">
+                        <img src="static/images/{imagen}" alt="{nombre}">
                         <h3>{nombre}</h3>
                         <p class="price">
                             ${valor:,} CLP<br>
-                            <span style="color: #28a745; font-size: 0.9em;">
-                                <button onclick="consultarDivisas('{codigo}', {valor})" style="background: #17a2b8; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
-                                    💱 Ver en USD
-                                </button>
-                            </span>
+                            <span style="color: #28a745; font-size: 0.9em;">{precio_usd}</span>
                         </p>
                         <p class="stock">Stock: {stock} unidades</p>
                         <p class="description">{descripcion}</p>
@@ -117,52 +124,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                     </div>
                     """
 
-                # JavaScript para consultas
-                javascript_code = """
-                <script>
-                async function consultarDivisas(codigo, valorCLP) {
-                    const button = event.target;
-                    button.innerHTML = '⏳ Consultando...';
-                    button.disabled = true;
-
-                    try {
-                        const response = await fetch('http://localhost:5001/api/divisas/USD', {
-                            method: 'GET'
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            const valorUSD = (valorCLP / data.valor).toFixed(2);
-                            button.innerHTML = `$${valorUSD} USD`;
-                            button.style.background = '#28a745';
-                        } else {
-                            button.innerHTML = 'API no disponible';
-                            button.style.background = '#dc3545';
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        button.innerHTML = 'Error API';
-                        button.style.background = '#dc3545';
-                    }
-
-                    setTimeout(() => {
-                        button.innerHTML = '💱 Ver en USD';
-                        button.style.background = '#17a2b8';
-                        button.disabled = false;
-                    }, 3000);
-                }
-
-                async function consultarStockAPI(codigo) {
-                    window.location.href = `/consultar_stock_api?codigo=${codigo}`;
-                }
-
-                function addToCart(codigo, nombre, valor) {
-                    alert(`Producto ${nombre} agregado al carrito`);
-                }
-                </script>
-                """
-
-                html = html.replace("{{productos}}", admin_button + productos_html + javascript_code)
+                html = html.replace("{{productos}}", admin_button + productos_html)
 
             except Exception as e:
                 print(f"ERROR en /catalog: {e}")
@@ -285,6 +247,8 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
 
             if codigo:
                 try:
+                    # Consultar nuestra propia API de productos
+                    import requests
                     response = requests.get(f"http://localhost:5000/api/productos/{codigo}/stock", timeout=2)
 
                     if response.status_code == 200:
@@ -295,6 +259,10 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                             <p><strong>Código:</strong> {stock_data['codigo']}</p>
                             <p><strong>Stock disponible:</strong> {stock_data['stock']} unidades</p>
                             <p><strong>Fuente:</strong> API REST Ferremas</p>
+                            <p><strong>Endpoint:</strong> GET /api/productos/{codigo}/stock</p>
+                            <hr>
+                            <p style="font-size: 12px; color: #666;">Esta información fue obtenida mediante nuestra API REST, 
+                            que puede ser consumida por otras tiendas o sucursales para consultar stock en tiempo real.</p>
                             <a href="/catalog" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">← Volver al Catálogo</a>
                         </div>
                         """
@@ -451,6 +419,57 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(html.encode("utf-8"))
             return
 
+        elif self.path == "/checkout":
+            # Calcular el total del carrito
+            total = 0
+            for item in carrito:
+                producto = product_model.obtener_producto_por_codigo(item["codigo"])
+                if producto:
+                    subtotal = producto["valor"] * item["cantidad"]
+                    total += subtotal
+
+            # Crear una orden de compra única
+            buy_order = uuid.uuid4().hex[:26]
+            session_id = str(uuid.uuid4())
+            return_url = "http://localhost:8000/confirmacion_pago"
+
+            # Crear la transacción
+            tx = Transaction(webpay_options)
+            response = tx.create(buy_order, session_id, total, return_url)
+
+            # Redirigir al usuario al formulario de pago de Webpay
+            self.send_response(302)
+            self.send_header("Location", response['url'] + "?token_ws=" + response['token'])
+            self.end_headers()
+            return
+
+        elif self.path.startswith("/confirmacion_pago"):
+            parsed_url = urllib.parse.urlparse(self.path)
+            query = urllib.parse.parse_qs(parsed_url.query)
+
+            tbk_token = query.get('TBK_TOKEN', [None])[0]
+            tbk_orden_compra = query.get('TBK_ORDEN_COMPRA', [None])[0]
+            tbk_id_sesion = query.get('TBK_ID_SESION', [None])[0]
+
+            # Aquí se puede procesar el resultado
+
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+
+            if tbk_token is None:
+                mensaje = "<h1>Pago aprovado</h1>"
+            else:
+                mensaje = f"<h1>Pago cancelado</h1><p>Orden: {tbk_orden_compra}</p>"
+
+            self.wfile.write(f"""
+            <html><body>
+                {mensaje}
+                <p><a href='/catalog'>Volver al catalogo</a></p>
+            </body></html>
+            """.encode("utf-8"))
+            return
+
         elif self.path == "/agregar_producto":
             with open("view/agregar_producto.html", "r", encoding="utf-8") as file:
                 html = file.read()
@@ -521,14 +540,17 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 existente = cursor.fetchone()
 
                 if existente:
+                    # Si existe, redirigir con error
                     self.send_response(302)
                     self.send_header("Location", "/register?error=1")
                     self.end_headers()
                 else:
+                    # Insertar nuevo usuario
                     cursor.execute("INSERT INTO usuarios (name, email, password) VALUES (?, ?, ?)",
                                  (nombre, email, password))
                     conn.commit()
 
+                    # Redirigir a login con mensaje de éxito
                     self.send_response(302)
                     self.send_header("Location", "/login?registered=1")
                     self.end_headers()
@@ -537,6 +559,30 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_error(500, "Error interno del servidor")
             finally:
                 conn.close()
+
+        elif self.path == "/confirmacion_pago":
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            fields = urllib.parse.parse_qs(post_data.decode('utf-8'))
+            token = fields.get('token_ws', [''])[0]
+
+            # Confirmar la transacción
+            tx = Transaction(webpay_options)
+            result = tx.commit(token)
+
+            # Verificar el resultado de la transacción
+            if result['status'] == 'AUTHORIZED':
+                carrito.clear()  # Vaciar el carrito
+                mensaje = "Pago realizado con éxito. Gracias por su compra."
+            else:
+                mensaje = "El pago no fue autorizado. Intente nuevamente."
+
+            # Mostrar la confirmación
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(f"<html><body><h1>{mensaje}</h1></body></html>".encode("utf-8"))
+            return
 
         elif self.path == "/agregar_producto": 
             content_length = int(self.headers['Content-Length'])
@@ -554,6 +600,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 conn = sqlite3.connect("ferremas.db")
                 cursor = conn.cursor()
 
+                # Verificar si ya existe producto con mismo código
                 cursor.execute("SELECT * FROM productos WHERE codigo = ?", (codigo,))
                 if cursor.fetchone():
                     self.send_response(302)
@@ -585,5 +632,5 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # para poder utilizarlo en otro pc
 with socketserver.TCPServer(("0.0.0.0", PORT), MyHandler) as httpd:
-    print(f"🚀 Servidor corriendo en http://localhost:{PORT}")
+    print(f"Servidor corriendo en http://localhost:{PORT}")
     httpd.serve_forever()
