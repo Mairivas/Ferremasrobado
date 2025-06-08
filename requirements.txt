@@ -1,0 +1,5 @@
+# Dependencias para FERREMAS
+transbank-sdk==4.0.0
+requests==2.31.0
+flask==2.3.3
+sqlite3
