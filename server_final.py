@@ -92,7 +92,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
 
                 print(f"DEBUG: Se obtuvieron {len(productos)} productos de la BD")
 
-                # Generar HTML para cada producto - SIN LLAMADAS AUTOMÁTICAS A API
+                # Generar HTML para cada producto - CON CONVERSIÓN CORREGIDA
                 for producto in productos:
                     codigo, nombre, valor, stock, imagen, descripcion = producto
 
@@ -117,7 +117,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                     </div>
                     """
 
-                # Agregar JavaScript para consultas bajo demanda
+                # JavaScript CORREGIDO para conversión de divisas
                 javascript_code = """
                 <script>
                 async function consultarDivisas(codigo, valorCLP) {
@@ -126,30 +126,39 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                     button.disabled = true;
 
                     try {
-                        const response = await fetch('http://localhost:5001/api/divisas/usd-clp', {
+                        // RUTA CORREGIDA: usar la conversión directa - DEBUG 2024
+                        console.log('DEBUG: Llamando a API con monto:', valorCLP);
+                        const response = await fetch(`http://localhost:5001/api/divisas/convertir/USD/${valorCLP}`, {
                             method: 'GET'
                         });
 
                         if (response.ok) {
                             const data = await response.json();
-                            const valorUSD = (valorCLP / data.tipo_cambio).toFixed(2);
+                            // Usar el campo correcto de la respuesta
+                            const valorUSD = data.monto_convertido;
                             button.innerHTML = `$${valorUSD} USD`;
                             button.style.background = '#28a745';
+
+                            // Mostrar también la tasa de cambio
+                            console.log(`Conversión: ${valorCLP} CLP = ${valorUSD} USD (Tasa: ${data.tasa_cambio})`);
                         } else {
+                            const errorData = await response.json();
+                            console.error('Error API:', errorData);
                             button.innerHTML = 'API no disponible';
                             button.style.background = '#dc3545';
                         }
                     } catch (error) {
-                        console.error('Error:', error);
-                        button.innerHTML = 'Error API';
+                        console.error('Error de conexión:', error);
+                        button.innerHTML = 'Error conexión';
                         button.style.background = '#dc3545';
                     }
 
+                    // Restaurar botón después de 5 segundos
                     setTimeout(() => {
                         button.innerHTML = '💱 Ver en USD';
                         button.style.background = '#17a2b8';
                         button.disabled = false;
-                    }, 3000);
+                    }, 5000);
                 }
 
                 async function consultarStockAPI(codigo) {
@@ -237,7 +246,28 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
         return http.server.SimpleHTTPRequestHandler.do_GET(self)
 
     def do_POST(self):
-        self.send_error(501, "Unsupported method (POST)")
+        if self.path == "/login":
+            # Manejar login
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            
+            self.send_response(302)
+            self.send_header('Location', '/catalog')
+            self.end_headers()
+            return
+        
+        elif self.path == "/register":
+            # Manejar registro
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            
+            self.send_response(302)
+            self.send_header('Location', '/login?registered=1')
+            self.end_headers()
+            return
+        
+        else:
+            self.send_error(404, "Not Found")
 
 
 # Cambiar el directorio raíz para servir archivos desde el proyecto

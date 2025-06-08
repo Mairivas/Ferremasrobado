@@ -1,59 +1,31 @@
 import sqlite3
 
 def corregir_rutas_imagenes():
-    """
-    Corrige las rutas de imágenes en la base de datos
-    """
+    """Corrige las rutas duplicadas de imágenes en la base de datos"""
     try:
         conn = sqlite3.connect('ferremas.db')
         cursor = conn.cursor()
 
-        # Ver productos actuales
-        cursor.execute("SELECT codigo, nombre, imagen FROM productos")
+        # Obtener todos los productos
+        cursor.execute("SELECT id, codigo, imagen FROM productos")
         productos = cursor.fetchall()
 
-        print("🔍 PRODUCTOS ACTUALES:")
-        print("=" * 50)
-        for codigo, nombre, imagen in productos:
-            print(f"📦 {codigo}: {nombre} -> {imagen}")
+        print("🔍 Revisando rutas de imágenes...")
 
-        print("\n🛠️ CORRIGIENDO RUTAS...")
+        for producto_id, codigo, imagen in productos:
+            # Si la imagen tiene "static/img/" al inicio, quitarlo
+            if imagen and imagen.startswith('static/img/'):
+                nueva_imagen = imagen.replace('static/img/', '')
 
-        # Actualizar rutas que tengan 'images' por 'img'
-        cursor.execute("""
-            UPDATE productos 
-            SET imagen = REPLACE(imagen, 'images/', 'img/')
-            WHERE imagen LIKE '%images/%'
-        """)
-
-        # También corregir si tienen ruta completa static/
-        cursor.execute("""
-            UPDATE productos 
-            SET imagen = REPLACE(imagen, 'static/img/', '')
-            WHERE imagen LIKE 'static/img/%'
-        """)
-
-        cursor.execute("""
-            UPDATE productos 
-            SET imagen = REPLACE(imagen, 'static/images/', '')
-            WHERE imagen LIKE 'static/images/%'
-        """)
+                # Actualizar en la base de datos
+                cursor.execute("UPDATE productos SET imagen = ? WHERE id = ?", (nueva_imagen, producto_id))
+                print(f"✅ Corregido {codigo}: {imagen} → {nueva_imagen}")
+            else:
+                print(f"✓ OK {codigo}: {imagen}")
 
         conn.commit()
-
-        # Ver productos corregidos
-        cursor.execute("SELECT codigo, nombre, imagen FROM productos")
-        productos_corregidos = cursor.fetchall()
-
-        print("\n✅ PRODUCTOS CORREGIDOS:")
-        print("=" * 50)
-        for codigo, nombre, imagen in productos_corregidos:
-            print(f"📦 {codigo}: {nombre} -> {imagen}")
-
-        print(f"\n🎯 TOTAL PRODUCTOS: {len(productos_corregidos)}")
-        print("✅ Rutas de imágenes corregidas!")
-
         conn.close()
+        print("\n🎉 ¡Rutas de imágenes corregidas!")
 
     except Exception as e:
         print(f"❌ Error: {e}")

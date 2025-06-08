@@ -236,13 +236,13 @@
         button.disabled = true;
 
         try {
-            const response = await fetch('http://localhost:5001/api/divisas/usd-clp', {
+            const response = await fetch(`http://localhost:5001/api/divisas/convertir/USD/${valorCLP}`, {
                 method: 'GET'
             });
 
             if (response.ok) {
                 const data = await response.json();
-                const valorUSD = (valorCLP / data.tipo_cambio).toFixed(2);
+                const valorUSD = data.monto_convertido;
                 button.innerHTML = `$${valorUSD} USD`;
                 button.style.background = 'linear-gradient(45deg, #28a745, #1e7e34)';
             } else {
