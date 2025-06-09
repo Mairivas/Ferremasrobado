@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrito de Compras - Ferremas</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+    <style>
+        .carrito-container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .carrito-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .carrito-table th,
+        .carrito-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .carrito-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .cantidad-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cantidad-controls button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .total-section {
+            text-align: right;
+            margin: 20px 0;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .botones-carrito {
+            display: flex;
+            gap: 15px;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: bold;
+        }
+
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <img src="../static/img/logo.png" alt="Ferremas" style="height: 40px;">
+            </div>
+            <ul>
+                <li><a href="/">Inicio</a></li>
+                <li><a href="/catalog">Catálogo</a></li>
+                <li><a href="/cart" class="active">Carrito</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="carrito-container">
+            <h1>🛒 Carrito de Compras</h1>
+
+            <table class="carrito-table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Subtotal</th>
+                        <th>Eliminar</th>
+                    </tr>
+                </thead>
+                <tbody id="carrito-productos">
+                    <tr>
+                        <td colspan="4">Tu carrito está vacío</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="total-section">
+                <p id="carrito-total">Total: $0</p>
+            </div>
+
+            <div class="botones-carrito">
+                <div>
+                    <a href="/catalog" class="btn btn-secondary">← Seguir Comprando</a>
+                    <button onclick="vaciarCarrito()" class="btn btn-danger">🗑️ Vaciar Carrito</button>
+                </div>
+                <div>
+                    <button onclick="procederAlPago()" class="btn btn-success">💳 Proceder al Pago</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ==================== FUNCIONES DEL CARRITO ====================
+        let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+
+        function mostrarCarrito() {
+            const carritoContainer = document.getElementById('carrito-productos');
+            const totalContainer = document.getElementById('carrito-total');
+
+            if (carrito.length === 0) {
+                carritoContainer.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px;">Tu carrito está vacío</td></tr>';
+                totalContainer.textContent = 'Total: $0';
+                return;
+            }
+
+            let html = '';
+            let total = 0;
+
+            carrito.forEach((producto, index) => {
+                const subtotal = producto.valor * producto.cantidad;
+                total += subtotal;
+
+                html += `
+                <tr>
+                    <td>
+                        <strong>${producto.nombre}</strong><br>
+                        <small>Código: ${producto.codigo}</small><br>
+                        <small>Precio unitario: $${producto.valor.toLocaleString()}</small>
+                    </td>
+                    <td>
+                        <div class="cantidad-controls">
+                            <button onclick="cambiarCantidad(${index}, -1)">-</button>
+                            <span>${producto.cantidad}</span>
+                            <button onclick="cambiarCantidad(${index}, 1)">+</button>
+                        </div>
+                    </td>
+                    <td>$${subtotal.toLocaleString()}</td>
+                    <td>
+                        <button onclick="eliminarDelCarrito(${index})" class="btn btn-danger" style="padding: 5px 10px;">
+                            🗑️
+                        </button>
+                    </td>
+                </tr>
+                `;
+            });
+
+            carritoContainer.innerHTML = html;
+            totalContainer.textContent = `Total: $${total.toLocaleString()}`;
+        }
+
+        function cambiarCantidad(index, cambio) {
+            carrito[index].cantidad += cambio;
+
+            if (carrito[index].cantidad <= 0) {
+                carrito.splice(index, 1);
+            }
+
+            localStorage.setItem('carrito', JSON.stringify(carrito));
+            mostrarCarrito();
+        }
+
+        function eliminarDelCarrito(index) {
+            if (confirm('¿Eliminar este producto del carrito?')) {
+                carrito.splice(index, 1);
+                localStorage.setItem('carrito', JSON.stringify(carrito));
+                mostrarCarrito();
+            }
+        }
+
+        function vaciarCarrito() {
+            if (confirm('¿Estás seguro de que quieres vaciar el carrito?')) {
+                carrito = [];
+                localStorage.removeItem('carrito');
+                mostrarCarrito();
+            }
+        }
+
+        function procederAlPago() {
+            if (carrito.length === 0) {
+                alert('Tu carrito está vacío');
+                return;
+            }
+
+            // Aquí puedes integrar con WebPay
+            alert('Redirigiendo a WebPay... (Funcionalidad por implementar)');
+        }
+
+        // Inicializar cuando carga la página
+        document.addEventListener('DOMContentLoaded', function() {
+            mostrarCarrito();
+        });
+    </script>
+</body>
+</html>

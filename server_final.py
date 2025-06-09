@@ -120,55 +120,64 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 # JavaScript CORREGIDO para conversión de divisas
                 javascript_code = """
                 <script>
-                async function consultarDivisas(codigo, valorCLP) {
-                    const button = event.target;
-                    button.innerHTML = '⏳ Consultando...';
-                    button.disabled = true;
+                    // ==================== CARRITO FUNCIONAL ====================
+                    let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
 
-                    try {
-                        // RUTA CORREGIDA: usar la conversión directa - DEBUG 2024
-                        console.log('DEBUG: Llamando a API con monto:', valorCLP);
-                        const response = await fetch(`http://localhost:5001/api/divisas/convertir/USD/${valorCLP}`, {
-                            method: 'GET'
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            // Usar el campo correcto de la respuesta
-                            const valorUSD = data.monto_convertido;
-                            button.innerHTML = `$${valorUSD} USD`;
-                            button.style.background = '#28a745';
-
-                            // Mostrar también la tasa de cambio
-                            console.log(`Conversión: ${valorCLP} CLP = ${valorUSD} USD (Tasa: ${data.tasa_cambio})`);
+                    // Función para agregar productos al carrito
+                    function addToCart(codigo, nombre, valor) {
+                        const productoExistente = carrito.find(item => item.codigo === codigo);
+                        
+                        if (productoExistente) {
+                            productoExistente.cantidad += 1;
+                            alert(`Se aumentó la cantidad de ${nombre} en el carrito`);
                         } else {
-                            const errorData = await response.json();
-                            console.error('Error API:', errorData);
-                            button.innerHTML = 'API no disponible';
-                            button.style.background = '#dc3545';
+                            const nuevoProducto = {
+                                codigo: codigo,
+                                nombre: nombre,
+                                valor: valor,
+                                cantidad: 1
+                            };
+                            carrito.push(nuevoProducto);
+                            alert(`${nombre} agregado al carrito`);
                         }
-                    } catch (error) {
-                        console.error('Error de conexión:', error);
-                        button.innerHTML = 'Error conexión';
-                        button.style.background = '#dc3545';
+                        
+                        localStorage.setItem('carrito', JSON.stringify(carrito));
                     }
 
-                    // Restaurar botón después de 5 segundos
-                    setTimeout(() => {
-                        button.innerHTML = '💱 Ver en USD';
-                        button.style.background = '#17a2b8';
-                        button.disabled = false;
-                    }, 5000);
-                }
+                    async function consultarDivisas(codigo, valorCLP) {
+                        const button = event.target;
+                        button.innerHTML = '⏳ Consultando...';
+                        button.disabled = true;
 
-                async function consultarStockAPI(codigo) {
-                    window.location.href = `/consultar_stock_api?codigo=${codigo}`;
-                }
+                        try {
+                            const response = await fetch(`http://localhost:5001/api/divisas/convertir/USD/${valorCLP}`, {
+                                method: 'GET'
+                            });
 
-                function addToCart(codigo, nombre, valor) {
-                    alert(`Producto ${nombre} agregado al carrito`);
-                    // Aquí puedes agregar la lógica del carrito
-                }
+                            if (response.ok) {
+                                const data = await response.json();
+                                const valorUSD = data.monto_convertido;
+                                button.innerHTML = `$${valorUSD} USD`;
+                                button.style.background = '#28a745';
+                            } else {
+                                button.innerHTML = 'API no disponible';
+                                button.style.background = '#dc3545';
+                            }
+                        } catch (error) {
+                            button.innerHTML = 'Error conexión';
+                            button.style.background = '#dc3545';
+                        }
+
+                        setTimeout(() => {
+                            button.innerHTML = '💱 Ver en USD';
+                            button.style.background = '#17a2b8';
+                            button.disabled = false;
+                        }, 5000);
+                    }
+
+                    async function consultarStockAPI(codigo) {
+                        window.location.href = `/consultar_stock_api?codigo=${codigo}`;
+                    }
                 </script>
                 """
 
@@ -177,6 +186,16 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 print(f"ERROR en /catalog: {e}")
                 html = html.replace("{{productos}}", f"<p>Error al cargar productos: {e}</p>")
+
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(html.encode("utf-8"))
+            return
+        
+        elif self.path == "/cart":
+            with open("view/cart.html", "r", encoding="utf-8") as file:
+                html = file.read()
 
             self.send_response(200)
             self.send_header("Content-type", "text/html")

@@ -270,5 +270,28 @@
         // Aquí puedes agregar la lógica del carrito
     }
     </script>
+    <script>
+    let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+
+    function addToCart(codigo, nombre, valor) {
+        const productoExistente = carrito.find(item => item.codigo === codigo);
+        
+        if (productoExistente) {
+            productoExistente.cantidad += 1;
+            alert(`Se aumentó la cantidad de ${nombre} en el carrito`);
+        } else {
+            const nuevoProducto = {
+                codigo: codigo,
+                nombre: nombre,
+                valor: valor,
+                cantidad: 1
+            };
+            carrito.push(nuevoProducto);
+            alert(`${nombre} agregado al carrito`);
+        }
+        
+        localStorage.setItem('carrito', JSON.stringify(carrito));
+    }
+    </script>
 </body>
 </html>
