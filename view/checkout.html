@@ -90,10 +90,9 @@
         <button onclick="history.back()" class="btn">⬅ Volver</button>
         <h1>Finalizar Compra</h1>
         <div class="cart-total">
-            Total a pagar: {{total}}
+            Total a pagar: <span id="checkout-total">$0</span>
         </div>
-        {{mensaje}}
-        <form method="POST" action="/checkout">
+        <form id="checkout-form">
             <label for="direccion">Dirección de envío:</label>
             <input type="text" id="direccion" name="direccion" required>
             <label for="metodo_pago">Método de pago:</label>
@@ -104,6 +103,60 @@
             </select>
             <button type="submit" class="btn">Confirmar Compra</button>
         </form>
+        <div id="mensaje-compra"></div>
     </div>
+    <script>
+    // Mostrar el total del carrito
+    function mostrarTotalCheckout() {
+        const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+        let total = 0;
+        carrito.forEach(item => total += item.valor * item.cantidad);
+        document.getElementById('checkout-total').innerText = '$' + total;
+    }
+    mostrarTotalCheckout();
+
+    document.getElementById('checkout-form').onsubmit = async function(e) {
+        e.preventDefault();
+        // Calcula el total del carrito
+        const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+        let total = 0;
+        carrito.forEach(item => total += item.valor * item.cantidad);
+
+        // Inicia la transacción con el backend
+        try {
+            const resp = await fetch('http://localhost:5000/api/pago/iniciar', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    monto: total,
+                    buy_order: 'orden_' + Date.now(),
+                    session_id: 'sesion_' + Date.now(),
+                    return_url: 'http://localhost:8000/pago_exitoso'
+                })
+            });
+            const data = await resp.json();
+            if (data.url && data.token) {
+                // Redirige al formulario de pago de Transbank
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = data.url;
+                form.style.display = 'none';
+
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'token_ws';
+                input.value = data.token;
+                form.appendChild(input);
+
+                document.body.appendChild(form);
+                form.submit();
+            } else {
+                document.getElementById('mensaje-compra').innerHTML = 'Error al iniciar el pago.';
+            }
+        } catch (err) {
+            document.getElementById('mensaje-compra').innerHTML = 'Error de conexión con el backend.';
+        }
+    };
+    </script>
 </body>
 </html>

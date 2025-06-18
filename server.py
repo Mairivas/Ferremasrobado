@@ -467,6 +467,14 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
         elif self.path.startswith("/static/"):
             return http.server.SimpleHTTPRequestHandler.do_GET(self)
 
+        elif self.path == '/checkout':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            with open('view/checkout.html', 'rb') as file:
+                self.wfile.write(file.read())
+            return
+
         else:
             self.send_error(404)
             return

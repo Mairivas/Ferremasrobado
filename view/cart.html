@@ -99,17 +99,53 @@
                     <th>Eliminar</th>
                 </tr>
             </thead>
-            <tbody>
-                {{productos}}
+            <tbody id="cart-body">
+                <!-- El contenido se llenará por JS -->
             </tbody>
         </table>
-        <div class="cart-total">
-            Total: {{total}}
+        <div class="cart-total" id="cart-total">
+            Total: $0
         </div>
         <div>
             {{mensaje_carrito}}
         </div>
         <a href="/checkout"><button class="btn">Proceder al Pago</button></a>
     </div>
+    <script>
+    function renderCart() {
+        const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+        const tbody = document.getElementById('cart-body');
+        const totalDiv = document.getElementById('cart-total');
+        tbody.innerHTML = '';
+        let total = 0;
+        if (carrito.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">El carrito está vacío.</td></tr>';
+            totalDiv.innerText = 'Total: $0';
+            return;
+        }
+        carrito.forEach((item, idx) => {
+            const subtotal = item.valor * item.cantidad;
+            total += subtotal;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.nombre}</td>
+                    <td>${item.cantidad}</td>
+                    <td>$${subtotal}</td>
+                    <td><button onclick="removeFromCart(${idx})">Eliminar</button></td>
+                </tr>
+            `;
+        });
+        totalDiv.innerText = 'Total: $' + total;
+    }
+
+    function removeFromCart(idx) {
+        let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+        carrito.splice(idx, 1);
+        localStorage.setItem('carrito', JSON.stringify(carrito));
+        renderCart();
+    }
+
+    window.onload = renderCart;
+    </script>
 </body>
 </html>

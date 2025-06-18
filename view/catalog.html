@@ -265,15 +265,9 @@
         window.location.href = `/consultar_stock_api?codigo=${codigo}`;
     }
 
-    function addToCart(codigo, nombre, valor) {
-        alert(`✅ Producto "${nombre}" agregado al carrito`);
-        // Aquí puedes agregar la lógica del carrito
-    }
-    </script>
-    <script>
     let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
 
-    function addToCart(codigo, nombre, valor) {
+    async function addToCart(codigo, nombre, valor) {
         const productoExistente = carrito.find(item => item.codigo === codigo);
         
         if (productoExistente) {
@@ -291,6 +285,25 @@
         }
         
         localStorage.setItem('carrito', JSON.stringify(carrito));
+
+        // Enviar producto al backend (API de carrito en Flask)
+        try {
+            await fetch('http://localhost:5000/api/cart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    codigo: codigo,
+                    nombre: nombre,
+                    valor: valor,
+                    cantidad: 1
+                })
+            });
+        } catch (error) {
+            // Opcional: mostrar error si la API no responde
+            console.error('Error enviando producto al carrito API:', error);
+        }
     }
     </script>
 </body>
